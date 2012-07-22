@@ -47,10 +47,10 @@ class Pwinty(object):
 		'''
 		return self._rest_connect('Orders', 'POST', data=kwargs)
 
-	def update_order(self, **kwargs):
+	def modify_order(self, **kwargs):
 		'''
 		/Orders (PUT)
-		Update existing order information
+		Modify existing order information
 		'''
 		return self._rest_connect('Orders', 'PUT', data=kwargs)
 
