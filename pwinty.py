@@ -1,111 +1,163 @@
+"""
+pwinty.py
+~~~~~~~~~~~~~~~
+
+This Python module wraps the photo printing API provided by Pwinty.com
+
+Matt Gorecki
+http://github.com/mattgorecki/pwinty
+"""
+
 import requests
 import json
 
 class Pwinty(object):
-	def __init__(self, url=None, apikey=None, merchantid=None):
-		self.url = url
+	def __init__(self, apikey=None, merchantid=None, sandbox=False):
 		self.apikey = apikey
 		self.merchantid = merchantid
+		
+		if sandbox:
+			self.url = "https://sandbox.pwinty.com/"
+		else:
+			self.url = "https://api.pwinty.com/"
 
-		print "Pwinty started"
+	def _headers(self):
+		headers = {'X-Pwinty-MerchantId': self.merchantid, 'X-Pwinty-REST-API-Key': self.apikey}
+		return headers
+
+	def _rest_connect(self, resource, method, params=None, data=None, files=None):
+		r = requests.request(method, self.url + resource, headers=self._headers(), params=params, data=data, files=files)
+
+		if r.status_code == 200 or r.status_code == 201:
+			if r.text:
+				return json.loads(r.text)
+			else:
+				return r.content
+		else:
+			print r.url
+			print r.headers
+			print r.text
+			raise Exception("HTTP Status: "+ str(r.status_code) + "\nPwinty Response: " + r.text)
 
 	### /Orders operations
-	def create_order(self):
+	def create_order(self, **kwargs):
 		'''
 		/Orders (POST)
 		Create new order
 		'''
-		pass
+		return self._rest_connect('Orders', 'POST', data=kwargs)
 
-	def update_order(self):
+	def update_order(self, **kwargs):
 		'''
 		/Orders (PUT)
 		Update existing order information
 		'''
-		pass
+		return self._rest_connect('Orders', 'PUT', data=kwargs)
 
-	def view_order(self):
+	def view_order(self, **kwargs):
 		'''
 		/Orders (GET)
-		View information about order
+		View information about order.  Returns all orders if id not specified.
 		'''
-		pass
+		return self._rest_connect('Orders', 'GET', params=kwargs)
 
-	def set_order_status(self):
+	def delete_order(self, **kwargs):
 		'''
 		/Orders/Status (POST)
-		Submit or cancel an order
+		Delete order
 		'''
-		pass
+		kwargs['status'] == "Cancelled"
+		return self._rest_connect('Orders/Status', 'POST', data=kwargs)
 
-	def view_order_status(self):
+	def submit_order(self, **kwargs):
+		'''
+		/Orders/Status (POST)
+		Submit order
+		'''
+		kwargs['status'] == "Submitted"
+		return self._rest_connect('Orders/Status', 'POST', data=kwargs)
+
+	def view_order_status(self, **kwargs):
 		'''
 		/Orders/SubmissionStatus (GET)
 		Check if order is ready for submission.  Show errors otherwise.
 		'''
-		pass
+		return self._rest_connect('Orders/SubmissionStatus', 'GET', params=kwargs)
 
 	### /Photos operations
-	def view_photo(self):
+	def view_photo(self, **kwargs):
 		'''
 		/Photos (GET)
 		Retrieve information about a specific photo
 		'''
-		pass
+		return self._rest_connect('Photos', 'GET', params=kwargs)
 
-	def add_photo(self):
+	def add_photo(self, **kwargs):
 		'''
 		/Photos (POST)
 		Add photo to order
 		'''
-		pass
+		if "filename" in kwargs:
+			files = {'file': open(kwargs['filename'], 'rb')}
+			return self._rest_connect('Photos', 'POST', data=kwargs, files=files)
+		elif "url" in kwargs:
+			return self._rest_connect('Photos', 'POST', data=kwargs)
+		else:
+			raise Exception("Filename OR photo URL required")
+			
 
-	def delete_photo(self):
+	def delete_photo(self, **kwargs):
 		'''
 		/Photos (DELETE)
 		Delete photo from order
 		'''
-		pass
+		return self._rest_connect('Photos', 'DELETE', params=kwargs)
 
 	### /Documents operations
-	def view_document(self):
+	def view_document(self, **kwargs):
 		'''
 		/Documents (GET)
 		Get information about a specific document
 		'''
-		pass
+		return self._rest_connect('Documents', 'GET', params=kwargs)
 
-	def add_document(self):
+	def add_document(self, **kwargs):
 		'''
 		/Documents (POST)
 		Add document to existing order
 		'''
-		pass
+		files = {'file': open(kwargs['filename'], 'rb')}
+	
+		return self._rest_connect('Documents', 'POST', data=kwargs, files=files)
 
-	def delete_document(self):
+	def delete_document(self, **kwargs):
 		'''
 		/Documents (DELETE)
 		Delete document from order
 		'''
+		return self._rest_connect('Documents', 'DELETE', params=kwargs)
 
 	### /Stickers operations
-	def view_sticker(self):
+	def view_sticker(self, **kwargs):
 		'''
 		/Stickers (GET)
 		Get information about specific sticker
 		'''
-		pass
+		return self._rest_connect('Stickers', 'GET', params=kwargs)
 
-	def add_sticker(self):
+	def add_sticker(self, **kwargs):
 		'''
 		/Stickers (POST)
 		Add sticker to order
 		'''
-		pass
+		filename = kwargs['filename']
+		files = {'file': open(filename, 'rb')}
 
-	def delete_sticker(self):
+		return self._rest_connect('Stickers', 'POST', data=kwargs, files=files)
+
+	def delete_sticker(self, **kwargs):
 		'''
 		/Stickers (DELETE)
 		Delete sticker from order
 		'''
-		pass
+		return self._rest_connect('Stickers', 'DELETE', params=kwargs)
