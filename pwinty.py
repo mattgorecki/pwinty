@@ -34,10 +34,8 @@ class Pwinty(object):
 			else:
 				return r.content
 		else:
-			print r.url
-			print r.headers
-			print r.text
-			raise Exception("HTTP Status: "+ str(r.status_code) + "\nPwinty Response: " + r.text)
+			response = json.loads(r.content)
+			raise PwintyError("Pwinty Error: " + r.text, r.status_code, response)
 
 	### /Orders operations
 	def create_order(self, **kwargs):
@@ -161,3 +159,15 @@ class Pwinty(object):
 		Delete sticker from order
 		'''
 		return self._rest_connect('Stickers', 'DELETE', params=kwargs)
+
+#class PwintyError(Exception):
+#	pass
+
+class PwintyError(Exception):
+	def __init__(self, message, status_code, response):
+		self.message = message
+		self.status_code = status_code
+		self.error = response['error']
+
+	def __str__(self):
+		return repr(self.message)
